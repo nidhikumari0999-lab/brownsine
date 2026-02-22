@@ -1,0 +1,1456 @@
+<!DOCTYPE html>
+<html lang="en-IN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0d1117">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CA Coach">
+<meta name="mobile-web-app-capable" content="yes">
+<title>CA Coach — Voice Interview AI</title>
+<link rel="manifest" href="manifest.json">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+/* ═══════════════════════════════════════ TOKENS */
+:root {
+  --bg:        #0a0c10;
+  --bg2:       #0d1018;
+  --panel:     #111420;
+  --panel2:    #161927;
+  --border:    #1e2235;
+  --border2:   #252a40;
+
+  --gold:      #d4a853;
+  --gold2:     #f0c96a;
+  --gold-dim:  rgba(212,168,83,0.1);
+  --gold-glow: rgba(212,168,83,0.25);
+
+  --teal:      #3ecfb2;
+  --teal-dim:  rgba(62,207,178,0.1);
+
+  --violet:    #8b6ff5;
+  --violet-dim:rgba(139,111,245,0.12);
+
+  --red:       #e85555;
+  --red-dim:   rgba(232,85,85,0.12);
+  --red-glow:  rgba(232,85,85,0.35);
+
+  --text:      #e8eaf2;
+  --text2:     #9ea3c0;
+  --text3:     #585e7a;
+
+  --safe-t: env(safe-area-inset-top,0px);
+  --safe-b: env(safe-area-inset-bottom,0px);
+  --safe-l: env(safe-area-inset-left,0px);
+  --safe-r: env(safe-area-inset-right,0px);
+
+  --r-sm: 10px;
+  --r-md: 16px;
+  --r-lg: 22px;
+  --r-xl: 28px;
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html { height:100%; }
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding-top: var(--safe-t);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Grain overlay */
+body::after {
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:1000;
+  opacity:.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 150px 150px;
+}
+
+/* ═══════════════════════════════════════ SCREENS */
+.screen { display:none; flex-direction:column; height:100%; }
+.screen.on { display:flex; }
+
+/* ═══════════════════════════════════════ SPLASH */
+#splash {
+  align-items:center; justify-content:center;
+  background: radial-gradient(ellipse 70% 50% at 50% 35%, rgba(212,168,83,0.12) 0%, transparent 70%),
+              var(--bg);
+  gap:0; padding: 32px 28px;
+  text-align:center;
+}
+.s-orb {
+  width:96px; height:96px;
+  background: conic-gradient(from 0deg, #d4a853, #f0c96a, #d4a853, #8b6ff5, #d4a853);
+  border-radius:26px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:46px;
+  box-shadow: 0 0 60px rgba(212,168,83,0.4), 0 0 120px rgba(212,168,83,0.15);
+  animation: orb-float 4s ease-in-out infinite;
+  margin-bottom:28px;
+  position:relative;
+}
+.s-orb::after {
+  content:''; position:absolute; inset:-3px; border-radius:28px;
+  background: conic-gradient(from 0deg, #d4a853, transparent, #8b6ff5, transparent, #d4a853);
+  z-index:-1; animation: spin 6s linear infinite; opacity:.6;
+}
+@keyframes orb-float { 0%,100%{transform:translateY(0) rotate(0deg)} 50%{transform:translateY(-12px) rotate(2deg)} }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+.s-title {
+  font-family:'Cormorant Garamond'; font-size:34px; font-weight:700;
+  color:var(--gold2); line-height:1.15; margin-bottom:10px;
+}
+.s-sub { font-size:14px; color:var(--text2); line-height:1.7; margin-bottom:32px; max-width:300px; }
+
+.feat-list { display:flex; flex-direction:column; gap:10px; width:100%; max-width:340px; margin-bottom:32px; }
+.feat {
+  display:flex; align-items:center; gap:14px;
+  background:var(--panel); border:1px solid var(--border2); border-radius:var(--r-md);
+  padding:13px 16px; text-align:left;
+  animation: feat-in .5s ease both;
+}
+.feat:nth-child(1){animation-delay:.1s}
+.feat:nth-child(2){animation-delay:.2s}
+.feat:nth-child(3){animation-delay:.3s}
+.feat:nth-child(4){animation-delay:.4s}
+@keyframes feat-in { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+
+.feat-icon { font-size:24px; flex-shrink:0; }
+.feat-info strong { display:block; font-size:13.5px; font-weight:600; margin-bottom:2px; }
+.feat-info span { font-size:11.5px; color:var(--text2); }
+
+.btn-go {
+  width:100%; max-width:340px; padding:18px;
+  background: linear-gradient(135deg, var(--gold), var(--gold2));
+  border:none; border-radius:var(--r-md); color:#0a0c10;
+  font-family:'Outfit'; font-size:16px; font-weight:700;
+  cursor:pointer; letter-spacing:.3px;
+  box-shadow: 0 6px 28px var(--gold-glow), 0 0 0 1px rgba(212,168,83,.3);
+  transition:.15s; -webkit-appearance:none;
+}
+.btn-go:active { transform:scale(.97); }
+
+/* ═══════════════════════════════════════ APP SHELL */
+#app { background:var(--bg); }
+
+/* Top bar */
+.topbar {
+  flex-shrink:0;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:12px 18px 10px;
+  background:var(--panel); border-bottom:1px solid var(--border);
+}
+.tb-brand { display:flex; align-items:center; gap:10px; }
+.tb-icon {
+  width:36px; height:36px; border-radius:10px;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  display:flex; align-items:center; justify-content:center; font-size:18px;
+}
+.tb-name { font-family:'Cormorant Garamond'; font-size:19px; font-weight:700; color:var(--gold2); }
+.tb-mode {
+  font-size:10px; color:var(--text3); text-transform:uppercase; letter-spacing:1px; margin-top:1px;
+}
+.tb-right { display:flex; align-items:center; gap:8px; }
+.chip {
+  padding:4px 11px; border-radius:20px; font-size:11px; font-weight:600;
+  letter-spacing:.4px;
+}
+.chip-gold { background:var(--gold-dim); color:var(--gold); border:1px solid var(--gold-glow); }
+.chip-teal { background:var(--teal-dim); color:var(--teal); border:1px solid rgba(62,207,178,.25); }
+
+/* Tabs */
+.tabnav {
+  flex-shrink:0; display:flex;
+  background:var(--panel); border-bottom:1px solid var(--border);
+  padding-bottom: var(--safe-b);
+}
+.tnav {
+  flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:4px; padding:9px 4px; cursor:pointer; border:none; background:transparent;
+  font-family:'Outfit'; transition:all .2s;
+}
+.tnav-icon { font-size:20px; transition:.2s; }
+.tnav-lbl { font-size:9.5px; font-weight:600; text-transform:uppercase; letter-spacing:.6px; color:var(--text3); transition:.2s; }
+.tnav.on .tnav-lbl { color:var(--gold2); }
+.tnav.on .tnav-icon { filter:drop-shadow(0 0 6px var(--gold-glow)); }
+
+/* Scrollable page content */
+.page { flex:1; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; }
+.page::-webkit-scrollbar { display:none; }
+
+/* ═══════════════════════════════════════ PRACTICE PAGE */
+.prac-wrap { padding:14px 16px; display:flex; flex-direction:column; gap:13px; }
+
+/* Phase indicator — the BIG UX element */
+.phase-bar {
+  display:flex; align-items:center; gap:8px;
+  background:var(--panel); border:1px solid var(--border); border-radius:var(--r-md);
+  padding:12px 16px; position:relative; overflow:hidden;
+}
+.phase-bar::before {
+  content:''; position:absolute; left:0; top:0; bottom:0;
+  background:linear-gradient(90deg, var(--gold), var(--gold2));
+  transition: width .5s ease; border-radius:var(--r-md) 0 0 var(--r-md);
+  opacity:.12;
+}
+.phase-dot {
+  width:10px; height:10px; border-radius:50%; flex-shrink:0;
+  background:var(--text3); transition:all .3s;
+}
+.phase-dot.active { background:var(--gold); box-shadow:0 0 8px var(--gold-glow); animation:pulse-dot 1.5s infinite; }
+.phase-dot.done { background:var(--teal); }
+@keyframes pulse-dot { 0%,100%{opacity:1}50%{opacity:.5} }
+.phase-label { font-size:12px; font-weight:600; color:var(--text2); flex:1; }
+.phase-label strong { color:var(--text); }
+.phase-skip {
+  font-size:11px; color:var(--text3); background:none; border:none; cursor:pointer;
+  font-family:'Outfit'; padding:4px 8px; border-radius:6px;
+}
+.phase-skip:active { background:var(--border); }
+
+/* Hands-free toggle */
+.hf-toggle {
+  display:flex; align-items:center; gap:10px;
+  background:var(--panel); border:1px solid var(--border); border-radius:var(--r-sm);
+  padding:10px 14px;
+}
+.hf-info { flex:1; }
+.hf-title { font-size:12.5px; font-weight:600; }
+.hf-sub { font-size:10.5px; color:var(--text2); margin-top:1px; }
+.toggle-wrap { flex-shrink:0; }
+.toggle {
+  width:46px; height:26px; border-radius:13px; border:none; cursor:pointer;
+  background:var(--border2); position:relative; transition:background .25s; -webkit-appearance:none;
+}
+.toggle::after {
+  content:''; position:absolute; top:3px; left:3px;
+  width:20px; height:20px; border-radius:50%; background:white;
+  transition:transform .25s; box-shadow:0 1px 4px rgba(0,0,0,.4);
+}
+.toggle.on { background:var(--gold); }
+.toggle.on::after { transform:translateX(20px); }
+
+/* Q card */
+.q-card {
+  background:var(--panel); border:1px solid var(--border2);
+  border-radius:var(--r-lg); padding:20px; position:relative; overflow:hidden;
+}
+.q-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:2px;
+  background:linear-gradient(90deg, var(--gold), var(--gold2), var(--violet));
+}
+.q-meta { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:13px; }
+.qtag {
+  padding:3px 9px; border-radius:8px; font-size:10px; font-weight:700;
+  text-transform:uppercase; letter-spacing:.5px;
+}
+.qt-hard  { background:var(--red-dim); color:var(--red); border:1px solid rgba(232,85,85,.2); }
+.qt-med   { background:var(--gold-dim); color:var(--gold); border:1px solid var(--gold-glow); }
+.qt-easy  { background:var(--teal-dim); color:var(--teal); border:1px solid rgba(62,207,178,.2); }
+.qt-topic { background:var(--violet-dim); color:var(--violet); border:1px solid rgba(139,111,245,.2); }
+.qt-co    { background:var(--border); color:var(--text3); border:1px solid var(--border2); }
+
+.q-num { font-family:'JetBrains Mono'; font-size:10px; color:var(--text3); margin-bottom:10px; letter-spacing:.5px; }
+.q-text {
+  font-family:'Cormorant Garamond'; font-size:21px; font-weight:600; line-height:1.45;
+  color:var(--text); margin-bottom:12px;
+}
+.q-hint { font-size:12px; color:var(--text2); line-height:1.6; padding-top:12px; border-top:1px solid var(--border); }
+.q-hint em { color:var(--gold); font-style:normal; font-weight:600; }
+
+/* Read aloud btn */
+.read-btn {
+  display:flex; align-items:center; gap:8px; margin-top:12px;
+  background:none; border:1px solid var(--border2); border-radius:var(--r-sm);
+  padding:8px 14px; color:var(--text2); font-size:12px; cursor:pointer;
+  font-family:'Outfit'; font-weight:500; transition:all .2s; -webkit-appearance:none;
+}
+.read-btn:active { background:var(--panel2); }
+.read-btn.speaking { color:var(--gold); border-color:var(--gold-glow); animation:border-pulse 1.5s infinite; }
+@keyframes border-pulse { 0%,100%{border-color:var(--gold-glow)} 50%{border-color:var(--gold)} }
+
+/* ═══════════════════════ VOICE ZONE — the star of the show */
+.voice-zone {
+  background:var(--panel); border:1px solid var(--border2);
+  border-radius:var(--r-lg); padding:20px; display:flex; flex-direction:column; gap:14px;
+}
+
+/* Big animated mic */
+.mic-stage {
+  display:flex; flex-direction:column; align-items:center; gap:12px;
+}
+.mic-ring {
+  position:relative; width:100px; height:100px;
+  display:flex; align-items:center; justify-content:center;
+}
+.mic-ring-svg {
+  position:absolute; inset:0; width:100%; height:100%;
+  animation: ring-spin 4s linear infinite;
+}
+@keyframes ring-spin { to { transform:rotate(360deg); } }
+.mic-btn {
+  width:78px; height:78px; border-radius:50%; border:none; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; font-size:30px;
+  background:linear-gradient(145deg, #e85555, #b83030);
+  box-shadow:0 4px 24px var(--red-glow);
+  transition:all .2s; -webkit-appearance:none; position:relative; z-index:2;
+}
+.mic-btn:active { transform:scale(.94); }
+.mic-btn.rec {
+  animation:mic-pulse 1.2s ease-in-out infinite;
+  background:linear-gradient(145deg, #ff4444, #cc1111);
+}
+@keyframes mic-pulse {
+  0%,100%{box-shadow:0 4px 24px rgba(232,85,85,.5)}
+  50%{box-shadow:0 4px 48px rgba(232,85,85,.9), 0 0 80px rgba(232,85,85,.25)}
+}
+.mic-btn.idle { background:linear-gradient(145deg,#1e2235,#111420); box-shadow:0 4px 16px rgba(0,0,0,.4); }
+.mic-status { font-size:12.5px; font-weight:600; color:var(--text2); letter-spacing:.3px; text-align:center; }
+.mic-status.rec { color:var(--red); }
+.mic-status.listening { color:var(--teal); }
+
+/* Countdown ring for silence */
+.countdown-ring { display:none; }
+.countdown-ring.show { display:block; }
+
+/* Live timer */
+.live-timer { font-family:'JetBrains Mono'; font-size:26px; color:var(--gold2); letter-spacing:2px; text-align:center; }
+
+/* Waveform */
+.waveform {
+  display:flex; align-items:center; gap:2.5px; height:48px;
+  background:var(--panel2); border-radius:var(--r-sm); padding:6px 10px; overflow:hidden;
+}
+.wb {
+  flex:1; border-radius:2px; background:var(--border2);
+  transition:height .08s ease, background .2s; min-height:3px;
+}
+.wb.live { background:linear-gradient(to top, var(--gold), var(--gold2)); }
+.wb.idle { background:var(--border); }
+
+/* Silence detector */
+.silence-bar {
+  height:3px; background:var(--border2); border-radius:2px; overflow:hidden;
+  display:none;
+}
+.silence-bar.show { display:block; }
+.silence-fill {
+  height:100%; background:var(--gold); border-radius:2px;
+  transition:width .3s linear;
+}
+
+/* Transcript */
+.transcript-box {
+  background:var(--panel2); border:1px solid var(--border); border-radius:var(--r-sm);
+  padding:14px; min-height:70px; font-size:14px; line-height:1.75; color:var(--text);
+  position:relative;
+}
+.t-ph { color:var(--text3); font-style:italic; font-size:13px; }
+#tText { display:none; }
+
+/* Submit */
+.go-btn {
+  width:100%; padding:16px; border:none; border-radius:var(--r-md); cursor:pointer;
+  background:linear-gradient(135deg, var(--gold), var(--gold2));
+  color:#0a0c10; font-family:'Outfit'; font-weight:700; font-size:15px;
+  letter-spacing:.3px; transition:.15s; -webkit-appearance:none;
+  box-shadow:0 4px 20px var(--gold-glow);
+}
+.go-btn:active { transform:scale(.98); }
+.go-btn:disabled { opacity:.35; box-shadow:none; }
+
+/* ═══════════════════════ FEEDBACK */
+.fb-card {
+  background:var(--panel); border:1px solid rgba(139,111,245,.25);
+  border-radius:var(--r-lg); padding:20px;
+  display:none; position:relative; overflow:hidden;
+}
+.fb-card.show { display:block; animation:slide-up .35s ease; }
+@keyframes slide-up { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+.fb-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:2px;
+  background:linear-gradient(90deg, var(--violet), #b08cf8);
+}
+.fb-head { display:flex; align-items:center; gap:11px; margin-bottom:15px; }
+.fb-av {
+  width:40px; height:40px; border-radius:50%;
+  background:linear-gradient(135deg, var(--violet),#b08cf8);
+  display:flex; align-items:center; justify-content:center; font-size:18px;
+  box-shadow:0 0 18px rgba(139,111,245,.35); flex-shrink:0;
+}
+.fb-av-label { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--violet); }
+.fb-av-sub { font-size:11px; color:var(--text2); margin-top:2px; }
+
+/* Score ring */
+.score-display {
+  display:flex; align-items:center; justify-content:center; gap:16px; margin-bottom:14px;
+}
+.score-ring-wrap { position:relative; width:74px; height:74px; flex-shrink:0; }
+.score-ring-svg { width:100%; height:100%; transform:rotate(-90deg); }
+.score-ring-track { fill:none; stroke:var(--border2); stroke-width:6; }
+.score-ring-fill { fill:none; stroke:var(--gold); stroke-width:6; stroke-linecap:round; transition:stroke-dashoffset 1s ease; }
+.score-num {
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  font-family:'Cormorant Garamond'; font-size:22px; font-weight:700; color:var(--gold2);
+}
+.score-chips { display:flex; flex-direction:column; gap:6px; flex:1; }
+.sc {
+  display:flex; align-items:center; gap:8px; font-size:12px;
+}
+.sc-label { color:var(--text2); width:60px; }
+.sc-bar { flex:1; height:4px; background:var(--border2); border-radius:2px; overflow:hidden; }
+.sc-fill { height:100%; border-radius:2px; transition:width 1s ease; }
+.sc-val { font-family:'JetBrains Mono'; font-size:11px; color:var(--text); width:28px; text-align:right; }
+
+.fb-text { font-size:13.5px; line-height:1.8; color:var(--text); margin-bottom:14px; }
+.fb-sec-title {
+  font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.8px;
+  color:var(--text3); margin-bottom:8px; display:flex; align-items:center; gap:6px;
+}
+.improve-item {
+  background:var(--panel2); border-left:3px solid var(--gold);
+  padding:10px 13px; border-radius:0 var(--r-sm) var(--r-sm) 0;
+  margin-bottom:7px; font-size:13px; line-height:1.65; color:var(--text);
+}
+.model-box {
+  background:var(--panel2); border:1px solid rgba(139,111,245,.15);
+  border-radius:var(--r-sm); padding:14px; font-size:13px; line-height:1.8;
+}
+.speak-fb-btn {
+  width:100%; padding:12px; border:1px solid rgba(139,111,245,.3); border-radius:var(--r-sm);
+  background:var(--violet-dim); color:var(--violet); font-family:'Outfit'; font-weight:600;
+  font-size:13px; cursor:pointer; margin-top:12px; display:flex; align-items:center;
+  justify-content:center; gap:8px; transition:.2s; -webkit-appearance:none;
+}
+.speak-fb-btn:active { background:rgba(139,111,245,.2); }
+.speak-fb-btn.speaking { animation:border-pulse2 1.5s infinite; }
+@keyframes border-pulse2 { 0%,100%{border-color:rgba(139,111,245,.3)} 50%{border-color:var(--violet)} }
+
+/* Loading dots */
+.dots { display:flex; gap:6px; align-items:center; padding:6px 0; }
+.dot { width:8px; height:8px; border-radius:50%; background:var(--violet); animation:dotb .8s infinite; }
+.dot:nth-child(2){animation-delay:.16s} .dot:nth-child(3){animation-delay:.32s}
+@keyframes dotb{0%,80%,100%{transform:scale(.45);opacity:.3}40%{transform:scale(1);opacity:1}}
+
+/* Next btn */
+.next-btn {
+  width:100%; padding:15px; border:1px solid var(--border2); border-radius:var(--r-md);
+  background:var(--panel); color:var(--text); font-family:'Outfit'; font-weight:600;
+  font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  gap:8px; transition:.2s; -webkit-appearance:none;
+}
+.next-btn:active { background:var(--panel2); }
+
+/* ═══════════════════════════════════════ TOPICS */
+.topics-wrap { padding:14px 16px; }
+.topics-head { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1.2px; color:var(--text3); margin-bottom:14px; }
+.topics-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.t-card {
+  background:var(--panel); border:1px solid var(--border); border-radius:var(--r-md);
+  padding:16px 14px; cursor:pointer; text-align:center; transition:all .2s;
+}
+.t-card:active, .t-card.sel {
+  background:var(--gold-dim); border-color:var(--gold-glow);
+  box-shadow:0 0 14px var(--gold-dim);
+}
+.t-emoji { font-size:26px; margin-bottom:8px; }
+.t-name { font-size:12px; font-weight:600; line-height:1.4; }
+.t-cnt { font-size:10px; color:var(--text3); margin-top:4px; }
+
+/* ═══════════════════════════════════════ STATS */
+.stats-wrap { padding:14px 16px; display:flex; flex-direction:column; gap:12px; }
+.stats-hero {
+  background:var(--panel);
+  background:radial-gradient(ellipse 80% 60% at 50% 30%, rgba(212,168,83,.08) 0%, var(--panel) 70%);
+  border:1px solid var(--border2); border-radius:var(--r-xl); padding:26px; text-align:center;
+}
+.hero-num { font-family:'Cormorant Garamond'; font-size:64px; font-weight:700; color:var(--gold2); line-height:1; }
+.hero-lbl { font-size:11px; color:var(--text3); text-transform:uppercase; letter-spacing:1px; margin-top:6px; }
+.sgrid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.s-tile {
+  background:var(--panel); border:1px solid var(--border); border-radius:var(--r-md);
+  padding:16px; text-align:center;
+}
+.s-val { font-family:'Cormorant Garamond'; font-size:32px; color:var(--gold2); }
+.s-lbl { font-size:10px; color:var(--text3); text-transform:uppercase; letter-spacing:.8px; margin-top:4px; }
+
+.streak-card {
+  background:linear-gradient(135deg, rgba(212,168,83,.12), rgba(212,168,83,.04));
+  border:1px solid rgba(212,168,83,.25); border-radius:var(--r-md);
+  padding:16px 18px; display:flex; align-items:center; gap:14px;
+}
+.streak-fire { font-size:40px; animation:fire 2s ease-in-out infinite alternate; }
+@keyframes fire { from{transform:scale(1) rotate(-3deg)} to{transform:scale(1.1) rotate(3deg)} }
+.streak-h3 { font-family:'Cormorant Garamond'; font-size:26px; color:var(--gold2); }
+.streak-p { font-size:12px; color:var(--text2); margin-top:2px; }
+
+.tip-card {
+  background:var(--panel); border:1px solid var(--border); border-radius:var(--r-md);
+  padding:14px 16px; display:flex; gap:12px;
+}
+.tip-icon { font-size:20px; flex-shrink:0; margin-top:1px; }
+.tip-h4 { font-size:13px; font-weight:600; margin-bottom:4px; }
+.tip-p { font-size:12px; color:var(--text2); line-height:1.6; }
+
+/* ═══════════════════════════════════════ TOAST */
+.toast {
+  position:fixed; bottom:80px; left:50%; transform:translateX(-50%) translateY(14px);
+  background:var(--panel2); border:1px solid var(--border2); border-radius:20px;
+  padding:9px 20px; font-size:13px; font-weight:500; z-index:9999;
+  opacity:0; transition:all .3s; pointer-events:none; white-space:nowrap;
+  box-shadow:0 4px 20px rgba(0,0,0,.5);
+}
+.toast.on { opacity:1; transform:translateX(-50%) translateY(0); }
+
+/* Install banner */
+.ibanner {
+  display:none; align-items:center; gap:10px;
+  background:var(--gold-dim); border-bottom:1px solid var(--gold-glow);
+  padding:10px 16px;
+}
+.ibanner.on { display:flex; }
+.ibanner p { flex:1; font-size:12px; color:var(--text); line-height:1.5; }
+.ibanner p strong { color:var(--gold2); }
+.ibtn { background:var(--gold); color:#0a0c10; border:none; border-radius:8px; padding:7px 14px; font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap; }
+.iclose { background:none; border:none; color:var(--text3); font-size:20px; cursor:pointer; padding:4px; }
+
+/* PWA safe area for bottom */
+.page-bot-pad { height:calc(20px + var(--safe-b)); }
+</style>
+</head>
+<body>
+
+<!-- ══ SPLASH ══ -->
+<div class="screen on" id="splash">
+  <div class="s-orb">⚖️</div>
+  <div class="s-title">CA Interview<br>Voice Coach</div>
+  <p class="s-sub">Fully hands-free. AI speaks the question, you answer aloud, Claude scores your response.</p>
+  <div class="feat-list">
+    <div class="feat"><span class="feat-icon">🔊</span><div class="feat-info"><strong>AI Speaks Questions</strong><span>Indian-accent optimised voice, auto-plays each question</span></div></div>
+    <div class="feat"><span class="feat-icon">🎤</span><div class="feat-info"><strong>You Answer by Voice</strong><span>Live transcript, silence detection, auto-submit</span></div></div>
+    <div class="feat"><span class="feat-icon">✦</span><div class="feat-info"><strong>Claude AI Scores You</strong><span>Detailed feedback on Content, Clarity & Confidence</span></div></div>
+    <div class="feat"><span class="feat-icon">🤲</span><div class="feat-info"><strong>100% Hands-Free Mode</strong><span>No tapping needed — just listen and speak</span></div></div>
+  </div>
+  <button class="btn-go" onclick="startApp()">Begin Practice Session →</button>
+</div>
+
+<!-- ══ APP ══ -->
+<div class="screen" id="app">
+
+  <div class="topbar">
+    <div class="tb-brand">
+      <div class="tb-icon">⚖️</div>
+      <div>
+        <div class="tb-name">CA Coach</div>
+        <div class="tb-mode" id="modeLabel">🤲 HANDS-FREE ON</div>
+      </div>
+    </div>
+    <div class="tb-right">
+      <span class="chip chip-gold" id="streakChip">🔥 Day 1</span>
+      <span class="chip chip-teal" id="scoreChip">—/10</span>
+    </div>
+  </div>
+
+  <!-- Install banner -->
+  <div class="ibanner" id="ibanner">
+    <p><strong>Install as Android App</strong> — Add to Home Screen</p>
+    <button class="ibtn" onclick="doInstall()">Install</button>
+    <button class="iclose" onclick="document.getElementById('ibanner').classList.remove('on')">×</button>
+  </div>
+
+  <!-- Pages -->
+  <div class="page" id="pg-practice">
+    <div class="prac-wrap">
+
+      <!-- Phase indicator -->
+      <div class="phase-bar" id="phaseBar">
+        <div class="phase-dot done" id="pd1"></div>
+        <div class="phase-dot active" id="pd2"></div>
+        <div class="phase-dot" id="pd3"></div>
+        <div class="phase-dot" id="pd4"></div>
+        <div class="phase-label" id="phaseLabel"><strong>Listening to Question</strong></div>
+        <button class="phase-skip" onclick="skipPhase()">Skip →</button>
+      </div>
+
+      <!-- Hands-free toggle -->
+      <div class="hf-toggle">
+        <div class="hf-info">
+          <div class="hf-title">🤲 Hands-Free Mode</div>
+          <div class="hf-sub">Auto-listens → auto-submits after 3s silence → auto-reads feedback</div>
+        </div>
+        <div class="toggle-wrap">
+          <button class="toggle on" id="hfToggle" onclick="toggleHF()"></button>
+        </div>
+      </div>
+
+      <!-- Q Card -->
+      <div class="q-card">
+        <div class="q-num" id="qNum">Q 01 · 15</div>
+        <div class="q-meta" id="qMeta"></div>
+        <div class="q-text" id="qText">Loading…</div>
+        <div class="q-hint" id="qHint"></div>
+        <button class="read-btn" id="readBtn" onclick="speakQuestion()">
+          <span id="readIcon">🔊</span> <span id="readLbl">Replay Question</span>
+        </button>
+      </div>
+
+      <!-- Voice zone -->
+      <div class="voice-zone">
+
+        <div class="mic-stage">
+          <!-- Animated ring SVG -->
+          <div class="mic-ring">
+            <svg class="mic-ring-svg" id="ringAnim" viewBox="0 0 100 100">
+              <defs>
+                <linearGradient id="rg" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#d4a853"/>
+                  <stop offset="50%" stop-color="#8b6ff5"/>
+                  <stop offset="100%" stop-color="#3ecfb2"/>
+                </linearGradient>
+              </defs>
+              <circle cx="50" cy="50" r="46" fill="none" stroke="url(#rg)" stroke-width="2" stroke-dasharray="8 6" opacity="0.4"/>
+            </svg>
+            <button class="mic-btn idle" id="micBtn" onclick="toggleRec()">🎤</button>
+          </div>
+          <div class="live-timer" id="timerDisp">0:00</div>
+          <div class="mic-status" id="micStatus">Waiting for question…</div>
+        </div>
+
+        <!-- Waveform -->
+        <div class="waveform" id="waveform"></div>
+
+        <!-- Silence countdown bar -->
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <div class="silence-bar" id="silBar">
+            <div class="silence-fill" id="silFill" style="width:100%"></div>
+          </div>
+          <div id="silLabel" style="font-size:10px; color:var(--text3); display:none; text-align:center;">Auto-submitting in <span id="silCountdown">3</span>s — keep speaking to cancel</div>
+        </div>
+
+        <!-- Transcript -->
+        <div class="transcript-box">
+          <span class="t-ph" id="tPh">Your answer will appear here as you speak…</span>
+          <span id="tText"></span>
+        </div>
+
+        <button class="go-btn" id="goBtn" onclick="doSubmit()" disabled>✦ Get AI Feedback</button>
+      </div>
+
+      <!-- Feedback card -->
+      <div class="fb-card" id="fbCard">
+        <div class="fb-head">
+          <div class="fb-av">✦</div>
+          <div>
+            <div class="fb-av-label">Claude AI Feedback</div>
+            <div class="fb-av-sub" id="fbSub">Evaluating…</div>
+          </div>
+        </div>
+        <div class="dots" id="fbDots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+        <div id="fbBody" style="display:none">
+          <!-- Score ring + bars -->
+          <div class="score-display">
+            <div class="score-ring-wrap">
+              <svg class="score-ring-svg" viewBox="0 0 36 36">
+                <circle class="score-ring-track" cx="18" cy="18" r="15.9"/>
+                <circle class="score-ring-fill" id="scoreRingFill" cx="18" cy="18" r="15.9" stroke-dasharray="100 100" stroke-dashoffset="100"/>
+              </svg>
+              <div class="score-num" id="scoreNum">0</div>
+            </div>
+            <div class="score-chips">
+              <div class="sc">
+                <span class="sc-label">Clarity</span>
+                <div class="sc-bar"><div class="sc-fill" id="barClarity" style="width:0%;background:var(--teal)"></div></div>
+                <span class="sc-val" id="valClarity">0/10</span>
+              </div>
+              <div class="sc">
+                <span class="sc-label">Content</span>
+                <div class="sc-bar"><div class="sc-fill" id="barContent" style="width:0%;background:var(--violet)"></div></div>
+                <span class="sc-val" id="valContent">0/10</span>
+              </div>
+              <div class="sc">
+                <span class="sc-label">Confidence</span>
+                <div class="sc-bar"><div class="sc-fill" id="barConf" style="width:0%;background:var(--gold)"></div></div>
+                <span class="sc-val" id="valConf">0/10</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="fb-text" id="fbText"></div>
+          <div class="fb-sec-title">⚡ Key Improvements</div>
+          <div id="fbImprove"></div>
+          <div class="fb-sec-title" style="margin-top:14px">📖 Model Answer Framework</div>
+          <div class="model-box" id="fbModel"></div>
+          <button class="speak-fb-btn" id="speakFbBtn" onclick="readFeedbackAloud()">
+            🔊 Read Feedback Aloud
+          </button>
+        </div>
+      </div>
+
+      <!-- Next -->
+      <button class="next-btn" id="nextBtn" onclick="nextQ()">Next Question →</button>
+
+      <div class="page-bot-pad"></div>
+    </div>
+  </div>
+
+  <!-- Topics page -->
+  <div class="page" id="pg-topics" style="display:none">
+    <div class="topics-wrap">
+      <div class="topics-head">Select a Topic to Practice</div>
+      <div class="topics-grid" id="topicsGrid"></div>
+      <div class="page-bot-pad"></div>
+    </div>
+  </div>
+
+  <!-- Stats page -->
+  <div class="page" id="pg-stats" style="display:none">
+    <div class="stats-wrap">
+      <div class="stats-hero">
+        <div class="hero-num" id="heroAvg">—</div>
+        <div class="hero-lbl">Average Score / 10</div>
+      </div>
+      <div class="sgrid">
+        <div class="s-tile"><div class="s-val" id="stAnswered">0</div><div class="s-lbl">Answered</div></div>
+        <div class="s-tile"><div class="s-val" id="stStreak">1</div><div class="s-lbl">Day Streak</div></div>
+        <div class="s-tile"><div class="s-val" id="stMins">0</div><div class="s-lbl">Mins Today</div></div>
+        <div class="s-tile"><div class="s-val" id="stBest">—</div><div class="s-lbl">Best Score</div></div>
+      </div>
+      <div class="streak-card">
+        <div class="streak-fire">🔥</div>
+        <div><div class="streak-h3" id="streakH3">Day 1</div><p class="streak-p">Practice daily to maintain your streak!</p></div>
+      </div>
+      <div class="tip-card"><div class="tip-icon">🏢</div><div><div class="tip-h4">Big 4 Interviews</div><p class="tip-p">Focus on SA 200–620, Ind AS 115/109/116, COSO framework and case-based scenarios. Always cite the Standard number.</p></div></div>
+      <div class="tip-card"><div class="tip-icon">🏦</div><div><div class="tip-h4">Banking & NBFC Roles</div><p class="tip-p">Master BASEL norms, NPA classification, ECL provisioning, RBI circulars. Stress tolerance is tested in HR rounds.</p></div></div>
+      <div class="tip-card"><div class="tip-icon">💼</div><div><div class="tip-h4">Corporate Finance / MNC</div><p class="tip-p">Working capital, treasury, hedging instruments (IRS, CCS), transfer pricing basics, and financial modelling — all expected.</p></div></div>
+      <div class="tip-card"><div class="tip-icon">💰</div><div><div class="tip-h4">Salary Benchmarks 2025</div><p class="tip-p">CA freshers: ₹7–22 LPA. Big 4: ₹8–13 LPA. Industry / MNC: ₹10–18 LPA. Research the band before every HR round.</p></div></div>
+      <div class="tip-card"><div class="tip-icon">🗣️</div><div><div class="tip-h4">Voice Practice Tip</div><p class="tip-p">Answer 5 questions aloud every morning. Your first 30 seconds sets the tone — open with a structured 1-sentence summary.</p></div></div>
+      <div class="page-bot-pad"></div>
+    </div>
+  </div>
+
+  <!-- Bottom nav -->
+  <div class="tabnav">
+    <button class="tnav on" id="tn-practice" onclick="switchTab('practice')">
+      <div class="tnav-icon">🎤</div><div class="tnav-lbl">Practice</div>
+    </button>
+    <button class="tnav" id="tn-topics" onclick="switchTab('topics')">
+      <div class="tnav-icon">📚</div><div class="tnav-lbl">Topics</div>
+    </button>
+    <button class="tnav" id="tn-stats" onclick="switchTab('stats')">
+      <div class="tnav-icon">📊</div><div class="tnav-lbl">Progress</div>
+    </button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ══════════════════════════════════════════════════════ SCRIPT -->
+<script>
+// ─────────────────────────── QUESTIONS
+const QS = [
+  { topic:"Financial Accounting", level:"medium", co:"Big 4 / MNC",
+    text:"Explain the difference between Ind AS 115 and old AS 9 for revenue recognition, with a practical example from your articleship.",
+    hint:"Keywords: <em>5-step model · performance obligations · variable consideration</em>" },
+  { topic:"Auditing & Assurance", level:"hard", co:"Big 4 Audit",
+    text:"What is the auditor's responsibility when they discover a material misstatement due to fraud during statutory audit? Walk me through the steps.",
+    hint:"Keywords: <em>SA 240 · communicate to TCWG · modified opinion</em>" },
+  { topic:"Taxation", level:"medium", co:"Consulting / BFSI",
+    text:"Explain Transfer Pricing and which transactions are covered under Section 92 of the Income Tax Act. Give one real-world scenario.",
+    hint:"Keywords: <em>Section 92 · arm's length price · associated enterprises</em>" },
+  { topic:"HR / Behavioural", level:"easy", co:"All Companies",
+    text:"Tell me about a challenging situation during your articleship where you managed multiple deadlines simultaneously. What was the outcome?",
+    hint:"Use the <em>STAR method</em>: Situation → Task → Action → Result" },
+  { topic:"IFRS / Ind AS", level:"hard", co:"Listed Companies",
+    text:"How does Ind AS 116 on Leases change the balance sheet of a company that previously used operating lease accounting? Quantify the impact.",
+    hint:"Keywords: <em>right-of-use asset · lease liability · EBITDA improvement</em>" },
+  { topic:"GST / Indirect Tax", level:"medium", co:"Manufacturing",
+    text:"Explain the concept of Place of Supply under GST and how it determines whether CGST plus SGST or IGST applies. Give a cross-state example.",
+    hint:"Keywords: <em>inter-state vs intra-state · Section 10–13 IGST Act</em>" },
+  { topic:"Corporate Law", level:"medium", co:"Listed Companies",
+    text:"Walk me through Related Party Transactions under Companies Act 2013 — what qualifies, and what approvals are required?",
+    hint:"Keywords: <em>Section 188 · Board approval · shareholder resolution · audit committee</em>" },
+  { topic:"Financial Accounting", level:"hard", co:"Banking / NBFC",
+    text:"How is Expected Credit Loss calculated under Ind AS 109? Explain the three-stage model with examples of Stage 1, 2, and 3 assets.",
+    hint:"Keywords: <em>12-month ECL · lifetime ECL · probability of default · Stage migration</em>" },
+  { topic:"HR / Behavioural", level:"easy", co:"All Companies",
+    text:"Why do you want to join our firm over other Big 4 or top-tier companies? What specific value do you bring as a CA fresher?",
+    hint:"<em>Research the firm's service lines and recent landmark deals before answering</em>" },
+  { topic:"MIS & Excel", level:"medium", co:"Corporate Finance",
+    text:"You have been asked to build a monthly MIS dashboard for the CFO. Walk me through every component you would include and the Excel tools you'd use.",
+    hint:"Keywords: <em>Pivot tables · Power Query · variance commentary · KPIs · conditional formatting</em>" },
+  { topic:"Auditing & Assurance", level:"medium", co:"Internal Audit",
+    text:"What is the practical difference between Internal Audit and Statutory Audit? How would your articleship experience translate to an internal audit role?",
+    hint:"Keywords: <em>independence · risk-based approach · scope · reporting to Audit Committee</em>" },
+  { topic:"Taxation", level:"easy", co:"All Finance Roles",
+    text:"Explain deductions available under Chapter VI-A — Sections 80C, 80D, and 80G — and how they differ fundamentally from exemptions under Section 10.",
+    hint:"Keywords: <em>deduction vs exemption · 80C limit ₹1.5 lakh · Section 10(10D)</em>" },
+  { topic:"Financial Accounting", level:"medium", co:"Equity Research",
+    text:"How do you calculate Free Cash Flow to the Firm from a standard set of financial statements, and what does it signal to an equity analyst?",
+    hint:"Formula: <em>EBIT × (1−Tax) + D&amp;A − Capex − ΔNWC → unlevered free cash flow</em>" },
+  { topic:"HR / Behavioural", level:"easy", co:"All Companies",
+    text:"Where do you see yourself in five years, and how does starting in this specific role align with your long-term goal as a Chartered Accountant?",
+    hint:"<em>Show ambition balanced with near-term commitment to the role you're applying for</em>" },
+  { topic:"IFRS / Ind AS", level:"hard", co:"Big 4 / BFSI",
+    text:"Describe the impairment testing process under Ind AS 36. How do you determine whether goodwill recognised on acquisition should be impaired?",
+    hint:"Keywords: <em>CGU · recoverable amount · Value in Use · FVLCTS · annual mandatory testing</em>" }
+];
+
+const TOPICS_LIST = [
+  { name:"All Topics", emoji:"📋" },
+  { name:"Financial Accounting", emoji:"📊" },
+  { name:"Auditing & Assurance", emoji:"🔍" },
+  { name:"Taxation", emoji:"📑" },
+  { name:"GST / Indirect Tax", emoji:"🧾" },
+  { name:"IFRS / Ind AS", emoji:"🌐" },
+  { name:"Corporate Law", emoji:"⚖️" },
+  { name:"MIS & Excel", emoji:"💻" },
+  { name:"HR / Behavioural", emoji:"🤝" },
+];
+
+// ─────────────────────────── STATE
+const S = {
+  qi: 0, filtered: [...QS], topic: "All Topics",
+  handsFree: true,
+  isRecording: false, timerSec: 0, timerInt: null, waveInt: null,
+  transcript: '', finalTranscript: '',
+  recognition: null, voices: [],
+  silTimeout: null, silInterval: null, silCountdown: 3,
+  phase: 0, // 0=idle 1=speaking-q 2=listening 3=submitted 4=feedback
+  answered: 0, totalScore: 0, bestScore: 0, streak: 1, mins: 0,
+  deferInstall: null, currentFb: null,
+};
+
+// Load saved progress
+try {
+  const p = JSON.parse(localStorage.getItem('ca3') || '{}');
+  S.answered = p.answered||0; S.totalScore = p.totalScore||0;
+  S.bestScore = p.bestScore||0; S.streak = p.streak||1; S.mins = p.mins||0;
+} catch(e) {}
+
+// ─────────────────────────── BOOT
+function startApp() {
+  document.getElementById('splash').classList.remove('on');
+  document.getElementById('app').classList.add('on');
+  buildWaveform();
+  buildTopics();
+  initSpeech();
+  loadVoices();
+  updateStats();
+  updateStreakUI();
+  loadQ();
+
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault(); S.deferInstall = e;
+    document.getElementById('ibanner').classList.add('on');
+  });
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  }
+}
+
+function doInstall() {
+  if(!S.deferInstall) return;
+  S.deferInstall.prompt();
+  S.deferInstall.userChoice.then(() => document.getElementById('ibanner').classList.remove('on'));
+}
+
+// ─────────────────────────── VOICES
+function loadVoices() {
+  const load = () => {
+    S.voices = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
+  };
+  load();
+  if(window.speechSynthesis) {
+    window.speechSynthesis.onvoiceschanged = load;
+    // Trigger on Chrome
+    setTimeout(load, 100);
+    setTimeout(load, 500);
+  }
+}
+
+function pickVoice() {
+  if(!S.voices.length) loadVoices();
+  const pref = [
+    v => v.lang === 'en-IN',
+    v => v.lang.startsWith('en-IN'),
+    v => v.lang === 'en-GB' && v.name.toLowerCase().includes('female'),
+    v => v.lang === 'en-GB',
+    v => v.lang.startsWith('en'),
+  ];
+  for(const fn of pref) {
+    const v = S.voices.find(fn);
+    if(v) return v;
+  }
+  return null;
+}
+
+// ─────────────────────────── TTS
+let ttsOnEnd = null;
+function speak(text, onEnd) {
+  if(!window.speechSynthesis) { onEnd && onEnd(); return; }
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'en-IN';
+  u.rate = 0.88;
+  u.pitch = 1.05;
+  u.volume = 1;
+  const v = pickVoice();
+  if(v) u.voice = v;
+  ttsOnEnd = onEnd;
+  u.onend = () => { ttsOnEnd && ttsOnEnd(); ttsOnEnd = null; };
+  u.onerror = () => { ttsOnEnd && ttsOnEnd(); ttsOnEnd = null; };
+  // Chrome sometimes silently fails on long strings — split and chain
+  const chunks = splitForTTS(text);
+  speakChunks(chunks, 0, onEnd);
+}
+
+function splitForTTS(text) {
+  // Split at sentence boundaries, max 200 chars per chunk
+  const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+  const chunks = [];
+  let cur = '';
+  for(const s of sentences) {
+    if((cur + s).length > 200) { if(cur) chunks.push(cur.trim()); cur = s; }
+    else cur += s;
+  }
+  if(cur.trim()) chunks.push(cur.trim());
+  return chunks.length ? chunks : [text];
+}
+
+function speakChunks(chunks, idx, finalCb) {
+  if(idx >= chunks.length) { finalCb && finalCb(); return; }
+  if(!window.speechSynthesis) { finalCb && finalCb(); return; }
+  const u = new SpeechSynthesisUtterance(chunks[idx]);
+  u.lang = 'en-IN'; u.rate = 0.88; u.pitch = 1.05; u.volume = 1;
+  const v = pickVoice(); if(v) u.voice = v;
+  u.onend = () => speakChunks(chunks, idx+1, finalCb);
+  u.onerror = () => speakChunks(chunks, idx+1, finalCb);
+  window.speechSynthesis.speak(u);
+}
+
+function stopSpeech() {
+  if(window.speechSynthesis) window.speechSynthesis.cancel();
+  ttsOnEnd = null;
+}
+
+// ─────────────────────────── SPEECH RECOGNITION
+function initSpeech() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR) { toast('⚠️ Voice input not supported — use Chrome'); return; }
+  const r = new SR();
+  r.continuous = true;
+  r.interimResults = true;
+  r.lang = 'en-IN';
+  r.maxAlternatives = 1;
+
+  r.onresult = e => {
+    clearSilenceTimer();
+    let fin = '', interim = '';
+    for(let i = e.resultIndex; i < e.results.length; i++) {
+      if(e.results[i].isFinal) fin += e.results[i][0].transcript + ' ';
+      else interim += e.results[i][0].transcript;
+    }
+    S.finalTranscript += fin;
+    const full = (S.finalTranscript + interim).trim();
+    if(full) {
+      document.getElementById('tPh').style.display = 'none';
+      document.getElementById('tText').style.display = 'inline';
+      document.getElementById('tText').textContent = full;
+      document.getElementById('goBtn').disabled = false;
+    }
+    // Restart silence detection
+    if(S.isRecording && S.handsFree) startSilenceTimer();
+  };
+
+  r.onspeechend = () => {
+    if(S.isRecording && S.handsFree) startSilenceTimer();
+  };
+
+  r.onerror = e => {
+    if(e.error === 'aborted' || e.error === 'no-speech') return;
+    toast('🎤 Mic error: ' + e.error);
+    stopRec();
+  };
+
+  r.onend = () => {
+    if(S.isRecording) {
+      try { r.start(); } catch(e) { setTimeout(() => { try { r.start(); } catch(e2) {} }, 300); }
+    }
+  };
+
+  S.recognition = r;
+}
+
+// ─────────────────────────── SILENCE DETECTION
+function startSilenceTimer() {
+  clearSilenceTimer();
+  S.silCountdown = 3;
+  document.getElementById('silBar').classList.add('show');
+  document.getElementById('silLabel').style.display = 'block';
+  document.getElementById('silCountdown').textContent = 3;
+  document.getElementById('silFill').style.width = '100%';
+
+  S.silInterval = setInterval(() => {
+    S.silCountdown -= 0.3;
+    const pct = Math.max(0, (S.silCountdown / 3) * 100);
+    document.getElementById('silFill').style.width = pct + '%';
+    document.getElementById('silCountdown').textContent = Math.max(0, Math.ceil(S.silCountdown));
+    if(S.silCountdown <= 0) {
+      clearSilenceTimer();
+      if(S.isRecording && S.handsFree) {
+        stopRec();
+        setTimeout(doSubmit, 600);
+      }
+    }
+  }, 300);
+}
+
+function clearSilenceTimer() {
+  clearInterval(S.silInterval);
+  S.silInterval = null;
+  document.getElementById('silBar').classList.remove('show');
+  document.getElementById('silLabel').style.display = 'none';
+  document.getElementById('silFill').style.width = '100%';
+}
+
+// ─────────────────────────── WAVEFORM
+function buildWaveform() {
+  const wf = document.getElementById('waveform');
+  wf.innerHTML = '';
+  for(let i = 0; i < 40; i++) {
+    const b = document.createElement('div');
+    b.className = 'wb idle';
+    wf.appendChild(b);
+  }
+}
+
+function animWave(on) {
+  const bars = document.querySelectorAll('.wb');
+  if(on) {
+    S.waveInt = setInterval(() => {
+      bars.forEach(b => {
+        const h = Math.random() * 38 + 4;
+        b.style.height = h + 'px';
+        b.classList.replace('idle','live');
+      });
+    }, 85);
+  } else {
+    clearInterval(S.waveInt); S.waveInt = null;
+    bars.forEach(b => { b.style.height = '4px'; b.classList.replace('live','idle'); });
+  }
+}
+
+// ─────────────────────────── QUESTIONS
+function loadQ() {
+  const q = S.filtered[S.qi];
+  if(!q) return;
+  stopSpeech(); stopRec(); clearSilenceTimer();
+
+  // Q number
+  const tot = S.filtered.length;
+  document.getElementById('qNum').textContent = `Q ${String(S.qi+1).padStart(2,'0')} · ${tot}`;
+
+  // Tags
+  const lc = q.level==='hard'?'qt-hard':q.level==='medium'?'qt-med':'qt-easy';
+  document.getElementById('qMeta').innerHTML =
+    `<span class="qtag ${lc}">${q.level.toUpperCase()}</span>
+     <span class="qtag qt-topic">${q.topic}</span>
+     <span class="qtag qt-co">🏢 ${q.co}</span>`;
+
+  document.getElementById('qText').textContent = q.text;
+  document.getElementById('qHint').innerHTML = `<strong>Hints:</strong> ${q.hint}`;
+
+  resetVoiceUI();
+  setPhase(1);
+
+  // Auto-speak question after tiny delay (allows TTS engine to ready)
+  setTimeout(() => autoSpeakQuestion(q), 500);
+}
+
+function autoSpeakQuestion(q) {
+  setReadBtn(true);
+  document.getElementById('micStatus').textContent = 'Listening to question…';
+  speak("Question. " + q.text, () => {
+    setReadBtn(false);
+    if(S.handsFree) {
+      // Auto-start recording after question finishes
+      setTimeout(() => {
+        setPhase(2);
+        startRec();
+      }, 700);
+    } else {
+      setPhase(2);
+      document.getElementById('micStatus').textContent = 'Tap mic to answer';
+    }
+  });
+}
+
+function speakQuestion() {
+  const q = S.filtered[S.qi];
+  if(window.speechSynthesis && window.speechSynthesis.speaking) {
+    stopSpeech(); setReadBtn(false); return;
+  }
+  setReadBtn(true);
+  speak("Question. " + q.text, () => setReadBtn(false));
+}
+
+function setReadBtn(speaking) {
+  const btn = document.getElementById('readBtn');
+  const icon = document.getElementById('readIcon');
+  const lbl = document.getElementById('readLbl');
+  if(speaking) {
+    btn.classList.add('speaking');
+    icon.textContent = '⏸'; lbl.textContent = 'Stop';
+  } else {
+    btn.classList.remove('speaking');
+    icon.textContent = '🔊'; lbl.textContent = 'Replay Question';
+  }
+}
+
+function resetVoiceUI() {
+  stopRec(); clearSilenceTimer();
+  S.finalTranscript = ''; S.transcript = '';
+  document.getElementById('tPh').style.display = 'inline';
+  document.getElementById('tText').style.display = 'none';
+  document.getElementById('tText').textContent = '';
+  document.getElementById('timerDisp').textContent = '0:00';
+  document.getElementById('micStatus').textContent = 'Waiting…';
+  document.getElementById('goBtn').disabled = true;
+  document.getElementById('fbCard').classList.remove('show');
+  document.getElementById('fbBody').style.display = 'none';
+  document.getElementById('fbDots').style.display = 'flex';
+  document.getElementById('micBtn').classList.remove('rec');
+  document.getElementById('micBtn').classList.add('idle');
+  document.getElementById('micBtn').innerHTML = '🎤';
+  buildWaveform();
+  S.timerSec = 0;
+  clearInterval(S.timerInt); S.timerInt = null;
+  document.getElementById('pg-practice').scrollTop = 0;
+}
+
+// ─────────────────────────── RECORDING
+function toggleRec() {
+  if(S.isRecording) stopRec();
+  else startRec();
+}
+
+function startRec() {
+  if(S.isRecording) return;
+  S.isRecording = true;
+  S.finalTranscript = '';
+  stopSpeech(); setReadBtn(false);
+
+  const btn = document.getElementById('micBtn');
+  btn.classList.remove('idle'); btn.classList.add('rec');
+  btn.innerHTML = '⏹';
+  document.getElementById('micStatus').textContent = '🔴 Recording…';
+  document.getElementById('micStatus').className = 'mic-status rec';
+
+  S.timerSec = 0;
+  S.timerInt = setInterval(() => {
+    S.timerSec++;
+    const m = Math.floor(S.timerSec/60), sc = S.timerSec%60;
+    document.getElementById('timerDisp').textContent = `${m}:${sc.toString().padStart(2,'0')}`;
+  }, 1000);
+
+  animWave(true);
+  if(S.recognition) try { S.recognition.start(); } catch(e) {}
+  if(navigator.vibrate) navigator.vibrate(40);
+}
+
+function stopRec() {
+  if(!S.isRecording) return;
+  S.isRecording = false;
+  clearInterval(S.timerInt); S.timerInt = null;
+  clearSilenceTimer();
+  animWave(false);
+
+  const btn = document.getElementById('micBtn');
+  btn.classList.remove('rec'); btn.classList.add('idle');
+  btn.innerHTML = '🎤';
+  document.getElementById('micStatus').textContent = 'Answer recorded';
+  document.getElementById('micStatus').className = 'mic-status listening';
+
+  if(S.recognition) try { S.recognition.stop(); } catch(e) {}
+  if(navigator.vibrate) navigator.vibrate([30,20,30]);
+
+  const txt = document.getElementById('tText').textContent;
+  if(txt.trim()) document.getElementById('goBtn').disabled = false;
+}
+
+// ─────────────────────────── PHASE MANAGEMENT
+function setPhase(p) {
+  S.phase = p;
+  const dots = ['pd1','pd2','pd3','pd4'];
+  const labels = ['','Listening to Question','Speak Your Answer','Submitting…','Feedback Ready'];
+  dots.forEach((id,i) => {
+    const el = document.getElementById(id);
+    el.className = 'phase-dot';
+    if(i < p-1) el.classList.add('done');
+    else if(i === p-1) el.classList.add('active');
+  });
+  document.getElementById('phaseLabel').innerHTML = `<strong>${labels[p]||''}</strong>`;
+  const pct = ((p-1)/3*100);
+  document.getElementById('phaseBar').style.setProperty('--pct', pct+'%');
+}
+
+function skipPhase() {
+  stopSpeech(); setReadBtn(false);
+  if(S.phase === 1) { setPhase(2); startRec(); }
+  else if(S.phase === 2) { stopRec(); setPhase(3); setTimeout(doSubmit, 400); }
+}
+
+// ─────────────────────────── HANDS-FREE TOGGLE
+function toggleHF() {
+  S.handsFree = !S.handsFree;
+  const btn = document.getElementById('hfToggle');
+  btn.classList.toggle('on', S.handsFree);
+  document.getElementById('modeLabel').textContent = S.handsFree ? '🤲 HANDS-FREE ON' : '☝️ MANUAL MODE';
+  toast(S.handsFree ? '🤲 Hands-free mode ON' : '☝️ Manual mode ON');
+}
+
+// ─────────────────────────── SUBMIT & AI
+async function doSubmit() {
+  const q = S.filtered[S.qi];
+  const userAnswer = document.getElementById('tText').textContent || 'No spoken answer captured';
+  if(!userAnswer.trim() || userAnswer === 'No spoken answer captured') {
+    toast('⚠️ No answer detected — please try again'); return;
+  }
+
+  stopSpeech(); stopRec(); clearSilenceTimer();
+  setPhase(3);
+  document.getElementById('goBtn').disabled = true;
+  document.getElementById('fbCard').classList.add('show');
+  document.getElementById('fbDots').style.display = 'flex';
+  document.getElementById('fbBody').style.display = 'none';
+  document.getElementById('fbSub').textContent = 'Claude is evaluating your answer…';
+
+  setTimeout(() => {
+    document.getElementById('fbCard').scrollIntoView({ behavior:'smooth', block:'start' });
+  }, 300);
+
+  speak("Evaluating your answer. Please wait.");
+
+  const prompt = `You are an expert Chartered Accountant interview coach in India, evaluating a CA fresher candidate for high-paying roles (₹8–20 LPA at Big 4 firms, MNCs, banks, NBFCs).
+
+Question asked: "${q.text}"
+Topic: ${q.topic} | Company Type: ${q.co} | Difficulty: ${q.level}
+
+Candidate's spoken answer (voice-to-text, may have minor transcription errors): "${userAnswer}"
+
+Evaluate this answer as a strict but fair Big 4 partner would. Return ONLY valid JSON, no markdown fences, no extra text:
+{
+  "overall": <integer 1-10>,
+  "clarity": <integer 1-10>,
+  "content": <integer 1-10>,
+  "confidence": <integer 1-10>,
+  "verdict": "<one of: Excellent | Good | Average | Needs Work>",
+  "feedback": "<2-3 sentences — honest assessment of what a real interviewer would think, mention specific strengths and gaps>",
+  "improvements": ["<actionable improvement 1 — be specific>", "<actionable improvement 2>", "<actionable improvement 3>"],
+  "modelAnswer": "<4-5 sentence model answer framework a strong CA fresher would give — cite relevant Act sections, Standards numbers, practical examples>"
+}`;
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 900,
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+    const data = await res.json();
+    const raw = (data.content||[]).map(i=>i.text||'').join('');
+    const fb = JSON.parse(raw.replace(/```json|```/g,'').trim());
+    S.currentFb = fb;
+
+    // Update stats
+    S.answered++;
+    S.totalScore += fb.overall;
+    if(fb.overall > S.bestScore) S.bestScore = fb.overall;
+    S.mins += Math.floor(S.timerSec / 60);
+    saveProgress();
+    updateStats(); updateStreakUI();
+
+    renderFeedback(fb);
+
+    // Auto-read feedback in hands-free mode
+    if(S.handsFree) {
+      setTimeout(() => readFeedbackAloud(), 800);
+    }
+
+  } catch(err) {
+    // Offline/error fallback
+    const fallback = {
+      overall: null, clarity: null, content: null, confidence: null,
+      verdict: "Offline",
+      feedback: "AI feedback requires internet connection. Your answer has been recorded. Review the model answer framework below to self-assess your response.",
+      improvements: [
+        "Always cite the relevant Act Section or Standard number (e.g. SA 240, Section 92)",
+        "Use the STAR method for behavioural answers — be specific with numbers and outcomes",
+        "Give a practical articleship example to demonstrate hands-on depth"
+      ],
+      modelAnswer: `Key framework for this question: ${q.hint.replace(/<[^>]+>/g,'')}. Structure your answer by first defining the concept, then citing the legal or standards basis, then giving a practical example from your articleship.`
+    };
+    S.currentFb = fallback;
+    renderFeedback(fallback);
+  }
+}
+
+function renderFeedback(fb) {
+  stopSpeech();
+  document.getElementById('fbDots').style.display = 'none';
+  document.getElementById('fbBody').style.display = 'block';
+  setPhase(4);
+
+  const hasScore = fb.overall !== null;
+  document.getElementById('fbSub').textContent = hasScore
+    ? `Score: ${fb.overall}/10 — ${fb.verdict}`
+    : `Offline — review model answer`;
+
+  // Score ring
+  if(hasScore) {
+    const circ = 2 * Math.PI * 15.9;
+    const offset = circ - (fb.overall / 10) * circ;
+    const ringColor = fb.overall >= 7 ? '#3ecfb2' : fb.overall >= 5 ? '#d4a853' : '#e85555';
+    document.getElementById('scoreRingFill').style.strokeDasharray = `${circ} ${circ}`;
+    document.getElementById('scoreRingFill').style.strokeDashoffset = circ;
+    document.getElementById('scoreRingFill').style.stroke = ringColor;
+    setTimeout(() => { document.getElementById('scoreRingFill').style.strokeDashoffset = offset; }, 100);
+    document.getElementById('scoreNum').textContent = fb.overall;
+
+    const set = (id, bar, val) => {
+      document.getElementById(id).textContent = `${val}/10`;
+      setTimeout(() => { document.getElementById(bar).style.width = (val*10)+'%'; }, 200);
+    };
+    set('valClarity','barClarity', fb.clarity||0);
+    set('valContent','barContent', fb.content||0);
+    set('valConf','barConf', fb.confidence||0);
+
+    document.getElementById('scoreChip').textContent = `${fb.overall}/10`;
+  } else {
+    document.getElementById('scoreRingFill').style.strokeDashoffset = 100;
+    document.getElementById('scoreNum').textContent = '?';
+  }
+
+  document.getElementById('fbText').textContent = fb.feedback;
+  document.getElementById('fbImprove').innerHTML = fb.improvements.map(i =>
+    `<div class="improve-item">→ ${i}</div>`
+  ).join('');
+  document.getElementById('fbModel').textContent = fb.modelAnswer;
+
+  if(navigator.vibrate) navigator.vibrate([60,40,120]);
+}
+
+function readFeedbackAloud() {
+  if(!S.currentFb) return;
+  const btn = document.getElementById('speakFbBtn');
+  if(window.speechSynthesis && window.speechSynthesis.speaking) {
+    stopSpeech(); btn.classList.remove('speaking');
+    btn.innerHTML = '🔊 Read Feedback Aloud'; return;
+  }
+  btn.classList.add('speaking');
+  btn.innerHTML = '⏸ Stop Reading';
+  const fb = S.currentFb;
+  const scoreText = fb.overall ? `You scored ${fb.overall} out of 10. Verdict: ${fb.verdict}. ` : '';
+  const imprText = fb.improvements.map((i,n) => `Improvement ${n+1}: ${i}`).join('. ');
+  const fullText = `${scoreText}${fb.feedback}. Here are your key improvements. ${imprText}. Model answer framework: ${fb.modelAnswer}`;
+  speak(fullText, () => {
+    btn.classList.remove('speaking');
+    btn.innerHTML = '🔊 Read Feedback Aloud';
+    // In hands-free mode, auto-load next question after feedback is read
+    if(S.handsFree) {
+      toast('Loading next question in 3 seconds…');
+      setTimeout(nextQ, 3000);
+    }
+  });
+}
+
+// ─────────────────────────── NAVIGATION
+function nextQ() {
+  stopSpeech();
+  if(S.qi < S.filtered.length - 1) S.qi++;
+  else { S.qi = 0; toast('🎉 Set complete! Starting over.'); }
+  loadQ();
+}
+
+// ─────────────────────────── TOPICS
+function buildTopics() {
+  const grid = document.getElementById('topicsGrid');
+  grid.innerHTML = TOPICS_LIST.map(t => {
+    const cnt = t.name === 'All Topics' ? QS.length : QS.filter(q=>q.topic===t.name).length;
+    return `<div class="t-card ${t.name===S.topic?'sel':''}" onclick="selectTopic('${t.name}',this)">
+      <div class="t-emoji">${t.emoji}</div>
+      <div class="t-name">${t.name}</div>
+      <div class="t-cnt">${cnt} question${cnt!==1?'s':''}</div>
+    </div>`;
+  }).join('');
+}
+
+function selectTopic(name, el) {
+  S.topic = name;
+  document.querySelectorAll('.t-card').forEach(c => c.classList.remove('sel'));
+  el.classList.add('sel');
+  S.filtered = name === 'All Topics' ? [...QS] : QS.filter(q=>q.topic===name);
+  if(!S.filtered.length) S.filtered = [...QS];
+  S.qi = 0;
+  toast(`Topic: ${name} (${S.filtered.length} questions)`);
+  setTimeout(() => switchTab('practice'), 500);
+}
+
+// ─────────────────────────── TABS
+function switchTab(t) {
+  ['practice','topics','stats'].forEach(id => {
+    document.getElementById('pg-'+id).style.display = id===t ? 'block' : 'none';
+    document.getElementById('tn-'+id).classList.toggle('on', id===t);
+  });
+  if(t === 'topics') buildTopics();
+  if(t === 'stats') updateStats();
+}
+
+// ─────────────────────────── STATS
+function saveProgress() {
+  try {
+    localStorage.setItem('ca3', JSON.stringify({
+      answered:S.answered, totalScore:S.totalScore,
+      bestScore:S.bestScore, streak:S.streak, mins:S.mins
+    }));
+  } catch(e) {}
+}
+
+function updateStats() {
+  const avg = S.answered ? (S.totalScore/S.answered).toFixed(1) : '—';
+  document.getElementById('heroAvg').textContent = avg;
+  document.getElementById('stAnswered').textContent = S.answered;
+  document.getElementById('stStreak').textContent = S.streak;
+  document.getElementById('stMins').textContent = S.mins;
+  document.getElementById('stBest').textContent = S.bestScore || '—';
+}
+
+function updateStreakUI() {
+  document.getElementById('streakChip').textContent = `🔥 Day ${S.streak}`;
+  document.getElementById('streakH3').textContent = `Day ${S.streak}`;
+}
+
+// ─────────────────────────── TOAST
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('on');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('on'), 2800);
+}
+</script>
+</body>
+</html>

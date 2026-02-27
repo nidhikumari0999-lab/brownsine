@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Candlestick Patterns</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f14;
+    --card: #13161e;
+    --border: #1e2330;
+    --bull: #00e676;
+    --bear: #ff3d57;
+    --neutral: #ffd54f;
+    --text: #e8eaf0;
+    --muted: #6b7280;
+    --accent: #4fc3f7;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    min-height: 100vh;
+    padding: 32px 24px;
+  }
+  header {
+    text-align: center;
+    margin-bottom: 36px;
+  }
+  header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.8rem, 4vw, 3rem);
+    letter-spacing: 2px;
+    background: linear-gradient(135deg, var(--bull), var(--accent), var(--bear));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  header p {
+    color: var(--muted);
+    font-size: 0.75rem;
+    margin-top: 6px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+
+  .legend {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin-bottom: 32px;
+    font-size: 0.7rem;
+    letter-spacing: 1px;
+  }
+  .legend span { display: flex; align-items: center; gap: 6px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 16px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    transition: transform 0.2s, border-color 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+  .card.bull::before { background: var(--bull); }
+  .card.bear::before { background: var(--bear); }
+  .card.neutral::before { background: var(--neutral); }
+  .card:hover { transform: translateY(-3px); border-color: #2e3448; }
+
+  .tag {
+    font-size: 0.6rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-weight: 600;
+  }
+  .tag.bull { color: var(--bull); background: rgba(0,230,118,0.1); }
+  .tag.bear { color: var(--bear); background: rgba(255,61,87,0.1); }
+  .tag.neutral { color: var(--neutral); background: rgba(255,213,79,0.1); }
+
+  .card-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.95rem;
+    text-align: center;
+    color: var(--text);
+  }
+
+  svg.candle-chart { overflow: visible; }
+
+  .desc {
+    font-size: 0.63rem;
+    color: var(--muted);
+    text-align: center;
+    line-height: 1.6;
+  }
+
+  footer {
+    text-align: center;
+    margin-top: 40px;
+    color: var(--muted);
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Candlestick Patterns</h1>
+  <p>Technical Analysis Reference Guide</p>
+</header>
+
+<div class="legend">
+  <span><span class="dot" style="background:var(--bull)"></span> Bullish</span>
+  <span><span class="dot" style="background:var(--bear)"></span> Bearish</span>
+  <span><span class="dot" style="background:var(--neutral)"></span> Neutral/Star</span>
+</div>
+
+<div class="grid" id="grid"></div>
+
+<footer>© CANDLESTICK PATTERNS REFERENCE · FOR EDUCATIONAL PURPOSES ONLY</footer>
+
+<script>
+const bull = '#00e676';
+const bear = '#ff3d57';
+const neutral = '#ffd54f';
+const bodyStroke = '#0d0f14';
+
+// Helper to draw a single candle: x=center, top/bottom of wick, body top/bottom, color
+function candle(x, wickTop, wickBot, bodyTop, bodyBot, color) {
+  const bodyH = Math.max(bodyBot - bodyTop, 2);
+  return `
+    <line x1="${x}" y1="${wickTop}" x2="${x}" y2="${bodyTop}" stroke="${color}" stroke-width="1.5"/>
+    <rect x="${x-7}" y="${bodyTop}" width="14" height="${bodyH}" fill="${color}" stroke="${bodyStroke}" stroke-width="0.5" rx="1"/>
+    <line x1="${x}" y1="${bodyBot}" x2="${x}" y2="${wickBot}" stroke="${color}" stroke-width="1.5"/>
+  `;
+}
+
+// Small doji/star candle
+function doji(x, wickTop, wickBot, midY, color) {
+  return `
+    <line x1="${x}" y1="${wickTop}" x2="${x}" y2="${midY-1}" stroke="${color}" stroke-width="1.5"/>
+    <rect x="${x-5}" y="${midY-2}" width="10" height="4" fill="${color}" rx="1"/>
+    <line x1="${x}" y1="${midY+1}" x2="${x}" y2="${wickBot}" stroke="${color}" stroke-width="1.5"/>
+  `;
+}
+
+const patterns = [
+  {
+    name: 'Bullish Engulfing',
+    type: 'bull',
+    label: 'Bullish',
+    desc: 'Large green candle engulfs prior red candle body. Reversal at downtrend bottom.',
+    svg: () => {
+      return candle(36, 10, 80, 30, 65, bear) + candle(64, 5, 85, 15, 75, bull);
+    }
+  },
+  {
+    name: 'Bearish Engulfing',
+    type: 'bear',
+    label: 'Bearish',
+    desc: 'Large red candle engulfs prior green candle body. Reversal at uptrend top.',
+    svg: () => {
+      return candle(36, 10, 80, 20, 60, bull) + candle(64, 5, 85, 15, 75, bear);
+    }
+  },
+  {
+    name: 'Hammer',
+    type: 'bull',
+    label: 'Bullish',
+    desc: 'Small body at top, long lower shadow. Bullish reversal at downtrend bottom.',
+    svg: () => {
+      return candle(50, 20, 80, 20, 32, bull);
+    }
+  },
+  {
+    name: 'Hanging Man',
+    type: 'bear',
+    label: 'Bearish',
+    desc: 'Hammer shape at uptrend top. Signals bearish reversal despite similar look.',
+    svg: () => {
+      return candle(50, 20, 80, 20, 32, bear);
+    }
+  },
+  {
+    name: 'Inverted Hammer',
+    type: 'bull',
+    label: 'Bullish',
+    desc: 'Small body at bottom, long upper shadow. Bullish reversal signal.',
+    svg: () => {
+      return candle(50, 18, 75, 60, 73, bull);
+    }
+  },
+  {
+    name: 'Shooting Star',
+    type: 'bear',
+    label: 'Bearish',
+    desc: 'Long upper shadow, small body near low. Bearish reversal at uptrend peak.',
+    svg: () => {
+      return candle(50, 18, 75, 60, 73, bear);
+    }
+  },
+  {
+    name: 'Morning Star',
+    type: 'bull',
+    label: 'Bullish',
+    desc: '3-candle reversal: big red, small star, big green. Bottom reversal signal.',
+    svg: () => {
+      return candle(25, 5, 80, 15, 60, bear)
+           + doji(50, 62, 78, 70, neutral)
+           + candle(75, 5, 80, 20, 60, bull);
+    }
+  },
+  {
+    name: 'Evening Star',
+    type: 'bear',
+    label: 'Bearish',
+    desc: '3-candle reversal: big green, small star, big red. Top reversal signal.',
+    svg: () => {
+      return candle(25, 5, 80, 20, 60, bull)
+           + doji(50, 5, 22, 13, neutral)
+           + candle(75, 5, 80, 15, 60, bear);
+    }
+  },
+  {
+    name: 'Piercing Pattern',
+    type: 'bull',
+    label: 'Bullish',
+    desc: 'Green candle opens below & closes above 50% of prior red. Bullish reversal.',
+    svg: () => {
+      return candle(36, 5, 82, 15, 70, bear) + candle(64, 40, 85, 43, 78, bull);
+    }
+  },
+  {
+    name: 'Dark Cloud Cover',
+    type: 'bear',
+    label: 'Bearish',
+    desc: 'Red candle opens above & closes below 50% of prior green. Bearish reversal.',
+    svg: () => {
+      return candle(36, 5, 82, 20, 75, bull) + candle(64, 5, 50, 8, 45, bear);
+    }
+  },
+];
+
+const grid = document.getElementById('grid');
+patterns.forEach(p => {
+  const card = document.createElement('div');
+  card.className = `card ${p.type}`;
+  card.innerHTML = `
+    <span class="tag ${p.type}">${p.label}</span>
+    <svg class="candle-chart" width="100" height="90" viewBox="0 0 100 90">
+      ${p.svg()}
+    </svg>
+    <div class="card-name">${p.name}</div>
+    <p class="desc">${p.desc}</p>
+  `;
+  grid.appendChild(card);
+});
+</script>
+</body>
+</html>
